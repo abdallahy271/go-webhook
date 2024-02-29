@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"go-webhook/webhook"
 	"io"
 	"net/http"
 )
@@ -21,6 +22,8 @@ func main() {
 		}
 
 		fmt.Println("received request")
+		webhook.CreatePR()
+
 		io.WriteString(w, "Hello, World!\n") // Respond with "Hello, World!"
 	}
 
