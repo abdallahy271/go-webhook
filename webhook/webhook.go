@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
 
 // GitHub repository details
@@ -14,23 +15,27 @@ const (
 	sourceRepo       = "webhooks-test"
 	targetOwner      = "abdallahy271"
 	targetRepo       = "go-webhook"
-	sourceBranchName = "webhook"
+	sourceBranchName = "webhook3"
 	targetBranchName = "main"
 )
 
-// Personal access token for authentication
-const accessToken = "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"
-
 // File details
-// const (
-// 	filePath    = "path/to/file.txt"
-// 	fileContent = "New content for the file"
-// )
+const (
+	username    = ""
+	fileContent = "New content for the file"
+
+	fileOwner = "CS404-Startup"
+	fileRepo  = "Pigeon"
+	filePath  = "docker-compose.yml"
+)
 
 func CreatePR() {
 	if err := CommitChange(); err != nil {
 		return
 	}
+
+	// Create HTTP client with authorization header
+	client := &http.Client{}
 
 	// Create pull request payload
 	payload := map[string]interface{}{
@@ -47,13 +52,14 @@ func CreatePR() {
 		return
 	}
 
-	// Create HTTP client with authorization header
-	client := &http.Client{}
+	// Make a POST request for a pull request
 	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls", targetOwner, targetRepo), bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		fmt.Println("Failed to create request:", err)
 		return
 	}
+	accessToken, _ := os.LookupEnv("GH_ACCESS_TOKEN")
+
 	req.Header.Set("Authorization", "token "+accessToken)
 
 	// Send request
@@ -72,11 +78,14 @@ func CreatePR() {
 	}
 
 	// Check response status code
-	if resp.StatusCode != http.StatusCreated {
+	switch resp.StatusCode {
+	case http.StatusCreated:
+		fmt.Println("Pull request created successfully!")
+	case http.StatusUnprocessableEntity:
+		fmt.Println("A pull request with the same head already exists. Skipping.")
+	default:
 		fmt.Println("Request failed with status code:", resp.StatusCode)
 		fmt.Println("Response:", string(body))
 		return
 	}
-
-	fmt.Println("Pull request created successfully")
 }
