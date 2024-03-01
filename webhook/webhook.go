@@ -7,12 +7,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 )
 
 // GitHub repository details
 const (
-	sourceOwner      = "abdallahy271"
-	sourceRepo       = "webhooks-test"
+	// sourceOwner = "abdallahy271"
+	// sourceRepo       = "webhooks-test"
 	targetOwner      = "abdallahy271"
 	targetRepo       = "go-webhook"
 	sourceBranchName = "webhook3"
@@ -21,16 +22,20 @@ const (
 
 // File details
 const (
-	username    = ""
-	fileContent = "New content for the file"
+// username    = ""
+// fileContent = "New content for the file"
 
-	fileOwner = "CS404-Startup"
-	fileRepo  = "Pigeon"
-	filePath  = "docker-compose.yml"
+// fileOwner = "CS404-Startup"
+// fileRepo  = "Pigeon"
+// filePath  = "docker-compose.yml"
 )
 
-func CreatePR() {
-	if err := CommitChange(); err != nil {
+func CreatePR(change, owner, repo string) {
+
+	currentTimeMilli := time.Now().UnixNano() / int64(time.Millisecond)
+	sourceBranchName := fmt.Sprintf("%s-%d", owner, currentTimeMilli)
+
+	if err := CommitChange(change, owner, repo, sourceBranchName); err != nil {
 		return
 	}
 
@@ -41,7 +46,7 @@ func CreatePR() {
 	payload := map[string]interface{}{
 		"title": "Update file",
 		"body":  "Updating file content",
-		"head":  fmt.Sprintf("%s:%s", sourceOwner, sourceBranchName),
+		"head":  fmt.Sprintf("%s:%s", targetOwner, sourceBranchName),
 		"base":  targetBranchName,
 	}
 

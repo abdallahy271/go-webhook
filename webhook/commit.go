@@ -42,17 +42,16 @@ func getLatestCommitSHA(ctx context.Context, client *github.Client, owner, repo,
 	return "", fmt.Errorf("error getting reference: %w", err)
 }
 
-func CommitChange() error {
+func CommitChange(change, pullRequestOwner, pullRequestRepo, sourceBranch string) error {
 
 	ctx, client := GetGitHubClient()
 
 	// Define the owner of the repository and the repository name
 	owner := "abdallahy271"
 	repo := "go-webhook"
-	branch := "webhook3"
 
 	// Get the content of the file
-	content, err := getFileContent(ctx, client, fileOwner, fileRepo, filePath)
+	content, err := getFileContent(ctx, client, pullRequestOwner, pullRequestRepo, change)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return err
@@ -60,7 +59,7 @@ func CommitChange() error {
 	contentStr := string(content)
 
 	// Get the SHA of the latest commit on the branch
-	latestCommitSHA, err := getLatestCommitSHA(ctx, client, owner, repo, branch)
+	latestCommitSHA, err := getLatestCommitSHA(ctx, client, owner, repo, sourceBranch)
 	if err != nil {
 		fmt.Println("Error getting latest commit:", err)
 		return err
@@ -70,7 +69,7 @@ func CommitChange() error {
 	// (This example just creates a dummy file)
 	entries := []github.TreeEntry{
 		{
-			Path:    github.String(filePath),
+			Path:    github.String(fmt.Sprintf("%s/%s", pullRequestOwner, change)),
 			Mode:    github.String("100644"),
 			Type:    github.String("blob"),
 			Content: github.String(contentStr),
@@ -95,7 +94,7 @@ func CommitChange() error {
 
 	// Update the master branch reference to point to the new commit SHA
 	_, _, err = client.Git.UpdateRef(ctx, owner, repo, &github.Reference{
-		Ref: github.String("refs/heads/" + branch),
+		Ref: github.String("refs/heads/" + sourceBranch),
 		Object: &github.GitObject{
 			SHA: newCommit.SHA,
 		},
@@ -105,6 +104,6 @@ func CommitChange() error {
 		return err
 	}
 
-	fmt.Printf("Commit to %s branch created successfully!", branch)
+	fmt.Printf("Commit to %s branch created successfully!", sourceBranch)
 	return nil
 }

@@ -6,7 +6,13 @@ import (
 	"strings"
 )
 
-func GetMergedPullRequestChanges(prURL string) ([]string, error) {
+type ChangeInfo struct {
+	Changes []string
+	Owner   string
+	Repo    string
+}
+
+func GetMergedPullRequestChanges(prURL string) (*ChangeInfo, error) {
 	// Initialize GitHub client with authentication
 	ctx, client := GetGitHubClient()
 
@@ -32,8 +38,13 @@ func GetMergedPullRequestChanges(prURL string) ([]string, error) {
 	for _, file := range files {
 		changes = append(changes, *file.Filename)
 	}
+	changeInfo := &ChangeInfo{
+		Changes: changes,
+		Owner:   owner,
+		Repo:    repo,
+	}
 
-	return changes, nil
+	return changeInfo, nil
 }
 
 func extractOwnerAndRepoFromURL(url string) (string, string, error) {

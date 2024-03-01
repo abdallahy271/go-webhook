@@ -59,14 +59,16 @@ func main() {
 				fmt.Println("Received merged pull request webhook", payload.PullRequest.URL)
 				// Here you can perform actions specific to merged pull requests
 				// Fetch the changes that were merged in the pull request
-				changes, err := webhook.GetMergedPullRequestChanges(payload.PullRequest.URL)
+				changeInfo, err := webhook.GetMergedPullRequestChanges(payload.PullRequest.URL)
 				if err != nil {
 					fmt.Printf("Error fetching changes for merged pull request: %v\n", err)
 				} else {
 					fmt.Println("Changes that were merged:")
-					for _, change := range changes {
+					for _, change := range changeInfo.Changes {
 						fmt.Println(change)
+						webhook.CreatePR(change)
 					}
+
 				}
 			} else {
 				// Ignore the webhook if it's not a closed pull request or if it wasn't merged
