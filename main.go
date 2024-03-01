@@ -56,7 +56,7 @@ func main() {
 
 			// Check if the action is "closed" and the pull request was merged
 			if payload.Action == "closed" && payload.PullRequest.Merged {
-				fmt.Println("Received merged pull request webhook")
+				fmt.Println("Received merged pull request webhook", payload.PullRequest.URL)
 				// Here you can perform actions specific to merged pull requests
 				// Fetch the changes that were merged in the pull request
 				changes, err := webhook.GetMergedPullRequestChanges(payload.PullRequest.URL)
