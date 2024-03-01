@@ -51,20 +51,20 @@ func extractOwnerAndRepoFromURL(url string) (string, string, error) {
 	// and handle errors and edge cases appropriately
 	// Here, we just split the URL by "/" and extract the owner and repository name
 	parts := strings.Split(url, "/")
-	if len(parts) < 5 {
+	if len(parts) < 7 {
 		return "", "", fmt.Errorf("invalid URL format: %s", url)
 	}
-	return parts[3], parts[4], nil
+	return parts[4], parts[5], nil
 }
 
 func extractPRNumberFromURL(url string) (int, error) {
 	// Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123)
 	// Similar to extractOwnerAndRepoFromURL function, you may need to adjust this function
 	parts := strings.Split(url, "/")
-	if len(parts) < 6 {
+	if len(parts) < 7 {
 		return 0, fmt.Errorf("invalid URL format: %s", url)
 	}
-	prNumberStr := parts[6]
+	prNumberStr := parts[7]
 	prNumber, err := strconv.Atoi(prNumberStr)
 	if err != nil {
 		return 0, fmt.Errorf("invalid PR number: %s", prNumberStr)
