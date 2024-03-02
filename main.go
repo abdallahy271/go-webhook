@@ -63,10 +63,14 @@ func main() {
 				if err != nil {
 					fmt.Printf("Error fetching changes for merged pull request: %v\n", err)
 				} else {
-					fmt.Println("Changes that were merged:")
-					for _, change := range changeInfo.Changes {
-						fmt.Println(change)
-						webhook.CreatePR(change)
+
+					if err := webhook.CommitChange(changeInfo); err != nil {
+						http.Error(w, "Failed to commit changes", http.StatusInternalServerError)
+						return
+					}
+					if err := webhook.CreatePR(changeInfo); err != nil {
+						http.Error(w, "Failed to create PR", http.StatusInternalServerError)
+						return
 					}
 
 				}

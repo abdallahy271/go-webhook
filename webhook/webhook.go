@@ -7,16 +7,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"time"
 )
 
 // GitHub repository details
 const (
 	// sourceOwner = "abdallahy271"
 	// sourceRepo       = "webhooks-test"
-	targetOwner      = "abdallahy271"
-	targetRepo       = "go-webhook"
-	sourceBranchName = "webhook3"
+	targetOwner = "abdallahy271"
+	targetRepo  = "go-webhook"
+	// sourceBranchName = "webhook3"
 	targetBranchName = "main"
 )
 
@@ -30,15 +29,7 @@ const (
 // filePath  = "docker-compose.yml"
 )
 
-func CreatePR(change, owner, repo string) {
-
-	currentTimeMilli := time.Now().UnixNano() / int64(time.Millisecond)
-	sourceBranchName := fmt.Sprintf("%s-%d", owner, currentTimeMilli)
-
-	if err := CommitChange(change, owner, repo, sourceBranchName); err != nil {
-		return
-	}
-
+func CreatePR(changeInfo *ChangeInfo) error {
 	// Create HTTP client with authorization header
 	client := &http.Client{}
 
@@ -46,7 +37,7 @@ func CreatePR(change, owner, repo string) {
 	payload := map[string]interface{}{
 		"title": "Update file",
 		"body":  "Updating file content",
-		"head":  fmt.Sprintf("%s:%s", targetOwner, sourceBranchName),
+		"head":  fmt.Sprintf("%s:%s", targetOwner, changeInfo.SourceBranch),
 		"base":  targetBranchName,
 	}
 
@@ -54,14 +45,14 @@ func CreatePR(change, owner, repo string) {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		fmt.Println("Failed to marshal payload:", err)
-		return
+		return err
 	}
 
 	// Make a POST request for a pull request
 	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls", targetOwner, targetRepo), bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		fmt.Println("Failed to create request:", err)
-		return
+		return err
 	}
 	accessToken, _ := os.LookupEnv("GH_ACCESS_TOKEN")
 
@@ -71,7 +62,7 @@ func CreatePR(change, owner, repo string) {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Failed to send request:", err)
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -79,7 +70,7 @@ func CreatePR(change, owner, repo string) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Failed to read response body:", err)
-		return
+		return err
 	}
 
 	// Check response status code
@@ -91,6 +82,7 @@ func CreatePR(change, owner, repo string) {
 	default:
 		fmt.Println("Request failed with status code:", resp.StatusCode)
 		fmt.Println("Response:", string(body))
-		return
+		return err
 	}
+	return nil
 }

@@ -8,16 +8,30 @@ import (
 	"github.com/google/go-github/github"
 )
 
-func getFileContent(ctx context.Context, client *github.Client, owner, repo, path string) ([]byte, error) {
-	fileContent, _, _, err := client.Repositories.GetContents(ctx, owner, repo, path, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get file content: %w", err)
-	}
+type FileContent struct {
+	Path   string
+	Change string
+}
 
-	content, err := base64.StdEncoding.DecodeString(*fileContent.Content)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode file content: %w", err)
-	}
+func getFileContents(ctx context.Context, client *github.Client, owner, repo string, paths []string) ([]FileContent, error) {
+	var contents []FileContent
+	for _, path := range paths {
+		fileContent, _, _, err := client.Repositories.GetContents(ctx, owner, repo, path, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get content for path %s: %w", path, err)
+		}
 
-	return content, nil
+		content, err := base64.StdEncoding.DecodeString(*fileContent.Content)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode file content %s: %w", path, err)
+		}
+
+		contents = append(contents, FileContent{
+			path,
+			string(content),
+		})
+
+	}
+	return contents, nil
+
 }

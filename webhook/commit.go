@@ -3,6 +3,7 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/google/go-github/github"
 )
@@ -42,39 +43,46 @@ func getLatestCommitSHA(ctx context.Context, client *github.Client, owner, repo,
 	return "", fmt.Errorf("error getting reference: %w", err)
 }
 
-func CommitChange(change, pullRequestOwner, pullRequestRepo, sourceBranch string) error {
+func CommitChange(change *ChangeInfo) error {
 
 	ctx, client := GetGitHubClient()
+	pullRequestOwner := change.Owner
+	pullRequestRepo := change.Repo
+	pullRequestChanges := change.Changes
 
 	// Define the owner of the repository and the repository name
 	owner := "abdallahy271"
 	repo := "go-webhook"
 
 	// Get the content of the file
-	content, err := getFileContent(ctx, client, pullRequestOwner, pullRequestRepo, change)
+	fileContents, err := getFileContents(ctx, client, pullRequestOwner, pullRequestRepo, pullRequestChanges)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return err
 	}
-	contentStr := string(content)
 
 	// Get the SHA of the latest commit on the branch
-	latestCommitSHA, err := getLatestCommitSHA(ctx, client, owner, repo, sourceBranch)
+	latestCommitSHA, err := getLatestCommitSHA(ctx, client, owner, repo, change.SourceBranch)
 	if err != nil {
 		fmt.Println("Error getting latest commit:", err)
 		return err
 	}
 
 	// Create a new tree with the changes you want to commit
-	// (This example just creates a dummy file)
-	entries := []github.TreeEntry{
-		{
-			Path:    github.String(fmt.Sprintf("%s/%s", pullRequestOwner, change)),
+	var entries []github.TreeEntry
+	for _, fileContent := range fileContents {
+		pullRequestOwnerPath := fmt.Sprintf("/%s", pullRequestOwner)
+		prefixedPath := filepath.Join(pullRequestOwnerPath, fileContent.Path)
+
+		entry := github.TreeEntry{
+			Path:    github.String(prefixedPath),
 			Mode:    github.String("100644"),
 			Type:    github.String("blob"),
-			Content: github.String(contentStr),
-		},
+			Content: github.String(fileContent.Change),
+		}
+		entries = append(entries, entry)
 	}
+
 	tree, _, err := client.Git.CreateTree(ctx, owner, repo, latestCommitSHA, entries)
 	if err != nil {
 		fmt.Println("Error creating tree:", err)
@@ -94,7 +102,7 @@ func CommitChange(change, pullRequestOwner, pullRequestRepo, sourceBranch string
 
 	// Update the master branch reference to point to the new commit SHA
 	_, _, err = client.Git.UpdateRef(ctx, owner, repo, &github.Reference{
-		Ref: github.String("refs/heads/" + sourceBranch),
+		Ref: github.String("refs/heads/" + change.SourceBranch),
 		Object: &github.GitObject{
 			SHA: newCommit.SHA,
 		},
@@ -104,6 +112,6 @@ func CommitChange(change, pullRequestOwner, pullRequestRepo, sourceBranch string
 		return err
 	}
 
-	fmt.Printf("Commit to %s branch created successfully!", sourceBranch)
+	fmt.Printf("Commit to %s branch created successfully!", change.SourceBranch)
 	return nil
 }

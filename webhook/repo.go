@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type ChangeInfo struct {
-	Changes []string
-	Owner   string
-	Repo    string
+	Changes      []string
+	Owner        string
+	Repo         string
+	SourceBranch string
 }
 
 func GetMergedPullRequestChanges(prURL string) (*ChangeInfo, error) {
@@ -38,10 +40,14 @@ func GetMergedPullRequestChanges(prURL string) (*ChangeInfo, error) {
 	for _, file := range files {
 		changes = append(changes, *file.Filename)
 	}
+	currentTimeMilli := time.Now().UnixNano() / int64(time.Millisecond)
+	sourceBranch := fmt.Sprintf("%s-%d", owner, currentTimeMilli)
+
 	changeInfo := &ChangeInfo{
-		Changes: changes,
-		Owner:   owner,
-		Repo:    repo,
+		Changes:      changes,
+		Owner:        owner,
+		Repo:         repo,
+		SourceBranch: sourceBranch,
 	}
 
 	return changeInfo, nil
