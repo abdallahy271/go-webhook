@@ -76,7 +76,7 @@ func CommitChange(change *ChangeInfo) error {
 		fmt.Println("this is my path", prefixedPath)
 
 		entry := github.TreeEntry{
-			Path:    github.String(fileContent.Path),
+			Path:    github.String(prefixedPath),
 			Mode:    github.String("100644"),
 			Type:    github.String("blob"),
 			Content: github.String(fileContent.Change),
