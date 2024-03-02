@@ -73,9 +73,10 @@ func CommitChange(change *ChangeInfo) error {
 	for _, fileContent := range fileContents {
 		pullRequestOwnerPath := fmt.Sprintf("/%s", pullRequestOwner)
 		prefixedPath := filepath.Join(pullRequestOwnerPath, fileContent.Path)
+		fmt.Println("this is my path", prefixedPath)
 
 		entry := github.TreeEntry{
-			Path:    github.String(prefixedPath),
+			Path:    github.String(fileContent.Path),
 			Mode:    github.String("100644"),
 			Type:    github.String("blob"),
 			Content: github.String(fileContent.Change),
