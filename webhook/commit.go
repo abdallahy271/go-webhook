@@ -71,7 +71,7 @@ func CommitChange(change *ChangeInfo) error {
 	// Create a new tree with the changes you want to commit
 	var entries []github.TreeEntry
 	for _, fileContent := range fileContents {
-		pullRequestOwnerPath := fmt.Sprintf("/%s", pullRequestOwner)
+		pullRequestOwnerPath := fmt.Sprintf("%s", pullRequestOwner)
 		prefixedPath := filepath.Join(pullRequestOwnerPath, fileContent.Path)
 		fmt.Println("this is my path", prefixedPath)
 
