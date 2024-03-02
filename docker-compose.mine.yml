@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  web:
+    build: ./pigeon_django
+    ports:
+      - "8000:8000"
+    container_name: pigeon_web_1
+    # migrate django project upon bootup, seed each database with 25 entries
+    command: >
+      bash -c "
+      python manage.py makemigrations
+      && python manage.py migrate
+      && python manage.py import_geodata
+      && python manage.py check_superuser
+      && python manage.py runserver 0.0.0.0:8000"
+
+    # Mounted for easier development. Changes locally will automatically reflect in docker
+    volumes:
+      - ./pigeon_django:/usr/src/pigeon
+    env_file:
+      - ./.env/django.env
+      - ./.env/firebase.env
+    # Only boot up django project once postgres/postgis is fully ready to go
+    depends_on:
+      db:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+
+  db:
+    image: postgis/postgis:14-3.3
+    container_name: pigeon_db_1
+    # accessible locally (localhost) on port 5433
+    ports:
+      - "5433:5432"
+    # Data persists across environment
+    volumes:
+      - /mnt/postgres/postgres_data/:/var/lib/postgresql/data/
+    env_file:
+      - ./.env/postgresql.env
+    # perform healthcheck to make sure postgis is accepting connections at endpoint
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U pigeon -d pigeon -h db -p 5432'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  
+ 
